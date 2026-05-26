@@ -1,0 +1,45 @@
+# ==========================================
+# Root Monorepo Gitignore
+# ==========================================
+
+# IDEs and OS Caches
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.pem
+
+# Logs and Caches
+*.log
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ==========================================
+# Backend (Python / uv)
+# ==========================================
+backend/.venv/
+backend/.env
+backend/test_response.json
+backend/__pycache__/
+backend/*.py[oc]
+backend/build/
+backend/dist/
+backend/wheels/
+backend/*.egg-info
+
+# ==========================================
+# Frontend (Next.js / Node)
+# ==========================================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env*
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+frontend/.vercel/
