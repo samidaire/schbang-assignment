@@ -256,3 +256,140 @@ def reset_circuit_breaker():
     global _circuit_open
     _circuit_open = False
     logger.info("Circuit breaker manually reset")
+
+
+def _build_brief_prompt(influencer: dict) -> str:
+    """Build a creative brief prompt for a single influencer."""
+    return f"""You are an expert influencer marketing director for a D2C skincare brand launching a new Hyaluronic Acid Serum line.
+    
+Write a highly personalized, structured creative content brief for this creator to produce a high-converting video (1 Reel on Instagram or 1 dedicated video on YouTube depending on their primary platform).
+
+Influencer Profile:
+- Name: {influencer.get('Name', 'Unknown')}
+- Platform: {influencer.get('Platform', 'Instagram')}
+- Category: {influencer.get('Category', 'Beauty/Skincare')}
+- Follower Size: {influencer.get('Followers', 0):,}
+- Estimated Rate: ₹{influencer.get('Rate (INR)', 'N/A')}
+- Content Style Quality: {influencer.get('Content Quality', 'High')}
+- Past Collabs: {influencer.get('Past Brand Collabs', 'None')}
+
+The brief MUST include the following clear sections:
+1. PERSONALIZED CONTENT HOOK: Draft a highly specific, catchy 3-second opening hook idea tailored to their category and platform (e.g. if they do educational skincare, do a science hook; if they do aesthetic GRWM, do a glass skin hook).
+2. KEY BRAND CLAIMS: Outline 3 mandatory skincare claims they must mention (e.g. 72-hour hydration lock, skin barrier repair, non-sticky glowing finish).
+3. RECOMMENDED VIDEO STRUCTURE: A quick step-by-step flow (Hook -> Problem/Skin Concerns -> Solution: The Serum -> Texture Demo -> Call to Action).
+4. TONALITY & COMPLIANCE: Outline the exact tone (scientific yet friendly, clean aesthetics) and strict warnings (NO drug-like cures, NO overnight miracles, do not compare to other brands).
+
+Write in clean, easy-to-read Markdown. Keep it encouraging, professional, and highly specific to their profile. Focus on the serum launch details."""
+
+
+def _fallback_brief(influencer: dict) -> str:
+    """Generate a high-quality default rules-based creative brief if OpenRouter is rate-limited."""
+    name = influencer.get("Name", "Creator")
+    platform = influencer.get("Platform", "Instagram")
+    category = influencer.get("Category", "Skincare")
+    
+    is_youtube = platform.lower() == "youtube"
+    format_type = "dedicated YouTube video" if is_youtube else "Instagram Reel"
+    
+    hook_idea = (
+        "Show a close-up of dry or dull skin under direct lighting, then transition to a radiant, bouncy skin texture after applying the serum."
+        if is_youtube else
+        "Start with a strong visual hook: 'Stop wasting money on serums that only hydrate for an hour! 🧪 Here's the science...'"
+    )
+    
+    return f"""### 📄 Campaign Creative Brief for **{name}**
+**Target Deliverable**: 1 {format_type}
+**Product Focus**: Schbang Glow & Hydration Hyaluronic Acid Serum
+**Category Focus**: {category}
+
+---
+
+#### **1. Personalized Content Hook Idea**
+*   **The Hook**: {hook_idea}
+*   **The Angle**: Align with your typical style—clean aesthetics, high-definition product application, and honest, relatable explanations.
+
+#### **2. Mandatory Brand Claims (Skincare Science)**
+*   **72-Hour Intense Hydration**: Clinically proven lock-in moisture.
+*   **Barrier Support**: Fortified with panthenol to soothe and rebuild sensitive skin.
+*   **Ultra-Lightweight & Non-Sticky**: Perfect prep before makeup or sun protection.
+
+#### **3. Recommended Narrative Flow**
+1.  **The Hook (0-5s)**: Grab attention by addressing dry/dehydrated skin or showing a glowing skin texture.
+2.  **The Struggle (5-15s)**: Mention how central heating or environmental stress depletes skin moisture.
+3.  **The Reveal (15-30s)**: Introduce the *Schbang Hydration Serum*. Show a close-up of the elegant dropper bottle and apply a few drops.
+4.  **The Texture Demo (30-45s)**: Emphasize the fast-absorbing, glassy skin finish (zero tackiness).
+5.  **The CTA (45-60s)**: Encourage viewers to check the link in your bio or description box for an exclusive launch discount.
+
+#### **4. Compliance & Brand Safety Rules**
+*   **Mandatory Warning**: State clearly that patch tests are recommended before full use.
+*   **Keywords to Avoid**: Do not use drug-related terms like "cures eczema" or "replaces prescription treatments".
+*   **Tone of Voice**: Educational, clean, and authentic. Keep the recommendation highly genuine.""" + "\n\n" + """### **How to Use this Brief**
+Copy and paste this guide directly into your pre-screening submission in our compliance portal!
+"""
+
+
+async def generate_brief_async(
+    influencer: dict,
+    model: str | None = None,
+) -> str:
+    """
+    Generate an AI creative brief for a single creator with retry logic.
+    Falls back to rule-based brief if API fails or circuit is open.
+    """
+    if not settings.OPENROUTER_API_KEY or _is_circuit_open():
+        return _fallback_brief(influencer)
+
+    use_model = model or settings.PRIMARY_MODEL
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            async with OpenRouter(api_key=settings.OPENROUTER_API_KEY) as client:
+                response = await client.chat.send_async(
+                    model=use_model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a professional skincare marketing director. Write briefs in clean Markdown.",
+                        },
+                        {
+                            "role": "user",
+                            "content": _build_brief_prompt(influencer),
+                        },
+                    ],
+                    temperature=0.7,
+                    max_tokens=1500,
+                )
+
+                content = response.choices[0].message.content if response.choices else None
+                if content:
+                    return content.strip()
+                return _fallback_brief(influencer)
+
+        except Exception as e:
+            error_str = str(e).lower()
+            is_rate_limit = "429" in str(e) or "rate limit" in error_str
+
+            if "per-day" in error_str or "per_day" in error_str:
+                _trip_circuit()
+                return _fallback_brief(influencer)
+
+            if is_rate_limit and attempt < MAX_RETRIES - 1:
+                backoff = BASE_BACKOFF * (2 ** attempt)
+                logger.info(
+                    f"Rate limited for brief of {influencer.get('Name')} on {use_model}, "
+                    f"retrying in {backoff}s (attempt {attempt + 1}/{MAX_RETRIES})"
+                )
+                await asyncio.sleep(backoff)
+
+                # Rotate model
+                models = settings.OPENROUTER_MODELS
+                current_idx = models.index(use_model) if use_model in models else 0
+                use_model = models[(current_idx + 1) % len(models)]
+                continue
+            else:
+                logger.warning(
+                    f"OpenRouter brief call failed for {influencer.get('Name')}: {e}"
+                )
+                return _fallback_brief(influencer)
+
+    return _fallback_brief(influencer)

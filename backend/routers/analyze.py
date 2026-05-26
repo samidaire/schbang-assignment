@@ -1,20 +1,61 @@
 """Analyze endpoint — the core influencer shortlisting pipeline."""
 
 import logging
+import math
 
+import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from pydantic import BaseModel
 
 from config import settings
 from services.excel_parser import parse_excel
 from services.scorer import score_influencers
 from services.shortlister import build_shortlist
-from services.ai_service import generate_reviews_batch
-
-import pandas as pd
+from services.ai_service import (
+    generate_review_async,
+    generate_brief_async,
+    _fallback_review,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["analyze"])
+
+
+class ReviewRequest(BaseModel):
+    influencer: dict
+
+
+@router.post("/live-review")
+async def get_live_review(request: ReviewRequest):
+    """
+    Generate a live strategic review for a single creator on-demand.
+    This avoids upfront bulk latency and saves OpenRouter free-tier rate limits.
+    """
+    try:
+        review = await generate_review_async(request.influencer)
+        return {"ai_review": review}
+    except Exception as e:
+        logger.error(f"Live review generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class BriefRequest(BaseModel):
+    influencer: dict
+
+
+@router.post("/live-brief")
+async def get_live_brief(request: BriefRequest):
+    """
+    Generate a personalized creative brief for a single shortlisted creator on-demand.
+    This avoids upfront bulk latency and provides tailored script instructions.
+    """
+    try:
+        brief = await generate_brief_async(request.influencer)
+        return {"brief": brief}
+    except Exception as e:
+        logger.error(f"Live brief generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/analyze")
@@ -27,7 +68,7 @@ async def analyze_influencers(file: UploadFile = File(...)):
     1. Parse Excel → clean DataFrame
     2. Score each influencer (composite 0–100)
     3. Build shortlist (budget + constraints)
-    4. Generate AI reviews (OpenRouter)
+    4. Generate instant fallback reviews (live reviews available on-demand)
     5. Return structured response matching frontend contract
     """
     # --- Validate file ---
@@ -61,17 +102,13 @@ async def analyze_influencers(file: UploadFile = File(...)):
         logger.info(f"Shortlisted: {len(shortlisted)}, Rejected: {len(rejected)}")
 
         # --- Step 4: AI Reviews ---
-        try:
-            shortlist_reviews = await generate_reviews_batch(shortlisted)
-            for i, review in enumerate(shortlist_reviews):
-                shortlisted[i]["ai_review"] = review
+        # Generate the high-quality local fallback review instantly to prevent
+        # blocking sheet upload. The user can request live AI reviews on-demand.
+        for i, inf in enumerate(shortlisted):
+            shortlisted[i]["ai_review"] = _fallback_review(inf)
 
-            rejected_reviews = await generate_reviews_batch(rejected)
-            for i, review in enumerate(rejected_reviews):
-                rejected[i]["ai_review"] = review
-        except Exception as e:
-            logger.warning(f"AI review generation failed, using fallback: {e}")
-            # Fallback reviews are already set by ai_service internally
+        for i, inf in enumerate(rejected):
+            rejected[i]["ai_review"] = _fallback_review(inf)
 
         # --- Step 5: Build response ---
         budget_used = sum(
@@ -133,6 +170,8 @@ def _format_influencer(inf: dict, selected: bool) -> dict:
         "ai_review": inf.get("ai_review", ""),
         "influencer_type": inf.get("influencer_type", ""),
         "tier": inf.get("tier", ""),
+        "red_flags": inf.get("red_flags", []),
+        "ResponseTime": _safe_float(inf.get("Avg Response Time (hrs)")),
     }
 
 
@@ -141,7 +180,6 @@ def _safe_float(val) -> float | None:
     if val is None:
         return None
     try:
-        import math
         f = float(val)
         return None if math.isnan(f) else f
     except (ValueError, TypeError):
