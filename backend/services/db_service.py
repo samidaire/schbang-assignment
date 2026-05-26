@@ -16,17 +16,53 @@ DB_PATH = os.environ.get(
 
 def get_db_connection():
     """Create a connection to the SQLite database."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except sqlite3.OperationalError as e:
+        logger.error(f"Failed to connect to database at {DB_PATH}: {e}")
+        raise
 
 
 def init_db():
     """Initialize SQLite tables and seed historical data if empty."""
     logger.info(f"💾 Initializing database at {DB_PATH}")
     
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # Ensure database directory exists
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir and not os.path.exists(db_dir):
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+            logger.info(f"Created database directory: {db_dir}")
+        except Exception as e:
+            logger.error(f"Failed to create database directory {db_dir}: {e}")
+            raise
+    
+    # Check if database file is corrupted
+    if os.path.exists(DB_PATH):
+        try:
+            # Try to open and verify database integrity
+            test_conn = sqlite3.connect(DB_PATH, timeout=10.0)
+            test_cursor = test_conn.cursor()
+            test_cursor.execute("SELECT 1")
+            test_conn.close()
+            logger.info("✅ Existing database file is valid")
+        except sqlite3.DatabaseError as e:
+            logger.warning(f"Database file is corrupted ({e}), recreating...")
+            try:
+                os.remove(DB_PATH)
+                logger.info("Removed corrupted database file")
+            except Exception as remove_err:
+                logger.error(f"Failed to remove corrupted database: {remove_err}")
+                raise
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+    except Exception as e:
+        logger.error(f"Failed to get database connection: {e}")
+        raise
     
     # Create Campaigns Table
     cursor.execute("""
@@ -74,22 +110,29 @@ def save_campaign(
     if not uploaded_at:
         uploaded_at = datetime.utcnow().isoformat()
         
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-    INSERT INTO campaigns (
-        campaign_name, uploaded_at, total_shortlisted, total_rejected,
-        budget_used, remaining_budget, tier23_percentage, avg_engagement_rate, avg_score
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        campaign_name, uploaded_at, total_shortlisted, total_rejected,
-        budget_used, remaining_budget, tier23_percentage, avg_engagement_rate, avg_score
-    ))
-    
-    conn.commit()
-    conn.close()
-    logger.info(f"💾 Campaign '{campaign_name}' saved to local SQLite history")
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+        INSERT INTO campaigns (
+            campaign_name, uploaded_at, total_shortlisted, total_rejected,
+            budget_used, remaining_budget, tier23_percentage, avg_engagement_rate, avg_score
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            campaign_name, uploaded_at, total_shortlisted, total_rejected,
+            budget_used, remaining_budget, tier23_percentage, avg_engagement_rate, avg_score
+        ))
+        
+        conn.commit()
+        conn.close()
+        logger.info(f"💾 Campaign '{campaign_name}' saved to local SQLite history")
+    except sqlite3.OperationalError as e:
+        logger.error(f"Database error when saving campaign '{campaign_name}': {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error when saving campaign '{campaign_name}': {e}")
+        raise
 
 
 def get_all_campaigns():

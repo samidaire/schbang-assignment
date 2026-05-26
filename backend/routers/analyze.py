@@ -221,10 +221,16 @@ async def default_influencer_analysis():
     """
     import os
     try:
-        # Search for database file
+        # Search for database file with multiple path strategies
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        project_root = os.path.dirname(backend_dir)
+        
         search_paths = [
-            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assingment", "influencer_database.xlsx"),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "assingment", "influencer_database.xlsx"),
+            # Relative to backend directory
+            os.path.join(backend_dir, "assingment", "influencer_database.xlsx"),
+            # Relative to project root
+            os.path.join(project_root, "assingment", "influencer_database.xlsx"),
+            # Absolute path (user's system)
             r"c:\Users\samid\Downloads\influencer-ai-assignment\assingment\influencer_database.xlsx"
         ]
         
@@ -232,13 +238,18 @@ async def default_influencer_analysis():
         for path in search_paths:
             if os.path.exists(path):
                 db_path = path
+                logger.info(f"Found default database at: {db_path}")
                 break
-                
+        
         if not db_path:
+            logger.error(f"Default database not found. Searched paths: {search_paths}")
             raise HTTPException(status_code=404, detail="Default influencer database spreadsheet not found")
 
         with open(db_path, "rb") as f:
             file_bytes = f.read()
+
+        if len(file_bytes) == 0:
+            raise HTTPException(status_code=400, detail="Default database file is empty")
 
         logger.info(f"Processing default file: {db_path} ({len(file_bytes)} bytes)")
 
@@ -288,6 +299,8 @@ async def default_influencer_analysis():
         logger.info("Default roster analysis compiled successfully")
         return response
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Default analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Default database optimization failed: {str(e)}")
