@@ -47,7 +47,8 @@ app = FastAPI(
 
 # CORS — configured for production security
 import os
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+default_origins = "http://localhost:3000,https://schbang-assignment-omega.vercel.app"
+cors_origins = os.getenv("CORS_ORIGINS", default_origins).split(",")
 cors_origins = [origin.strip() for origin in cors_origins]
 
 logger.info(f"CORS allowed origins: {cors_origins}")
