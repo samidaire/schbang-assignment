@@ -242,8 +242,12 @@ async def default_influencer_analysis():
                 break
         
         if not db_path:
-            logger.error(f"Default database not found. Searched paths: {search_paths}")
-            raise HTTPException(status_code=404, detail="Default influencer database spreadsheet not found")
+            logger.warning(f"Default database not found. Searched paths: {search_paths}")
+            # Return a meaningful error that the frontend can handle
+            raise HTTPException(
+                status_code=404,
+                detail="Default influencer database not available in production. Please upload an Excel file manually."
+            )
 
         with open(db_path, "rb") as f:
             file_bytes = f.read()

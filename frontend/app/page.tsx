@@ -869,9 +869,17 @@ export default function Home() {
       setError(null);
       try {
         const response = await fetch(`${API_BASE}/analyze/default`);
-        if (!response.ok) throw new Error('Failed to load default roster');
-        const data = await response.json();
-        setResults(data);
+        if (!response.ok) {
+          // If default database is not available (404), that's okay - user can upload manually
+          if (response.status === 404) {
+            console.log('Default database not available - user can upload manually');
+          } else {
+            throw new Error('Failed to load default roster');
+          }
+        } else {
+          const data = await response.json();
+          setResults(data);
+        }
       } catch (err) {
         console.error('Could not auto-load default roster:', err);
       } finally {
