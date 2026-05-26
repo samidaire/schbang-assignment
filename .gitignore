@@ -22,7 +22,9 @@ backend/.venv/
 backend/.env
 backend/test_response.json
 backend/__pycache__/
+backend/**/__pycache__/
 backend/*.py[oc]
+backend/*.db
 backend/build/
 backend/dist/
 backend/wheels/

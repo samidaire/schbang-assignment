@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from routers import health, analyze, apify
+from routers import health, analyze, apify, analytics
 
 # Configure logging
 logging.basicConfig(
@@ -22,6 +22,13 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifecycle — runs on startup and shutdown."""
     logger.info(f"🚀 {settings.APP_TITLE} v{settings.APP_VERSION} starting up")
+    
+    try:
+        from services.db_service import init_db
+        init_db()
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        
     logger.info(f"   OpenRouter API key: {'✅ configured' if settings.OPENROUTER_API_KEY else '❌ missing'}")
     logger.info(f"   Apify API key:      {'✅ configured' if settings.APIFY_API_KEY else '❌ missing'}")
     logger.info(f"   Budget limit:       ₹{settings.BUDGET_LIMIT:,.0f}")
@@ -38,15 +45,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow frontend dev server
+# CORS — allow frontend dev server and production client endpoints
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -55,6 +58,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(analyze.router)
 app.include_router(apify.router)
+app.include_router(analytics.router)
 
 
 @app.get("/")

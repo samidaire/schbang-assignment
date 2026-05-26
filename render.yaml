@@ -1,0 +1,25 @@
+# ──────────────────────────────────────────────────────────
+# Render Blueprint — deploy backend as a Docker Web Service
+# Docs: https://docs.render.com/infrastructure-as-code
+# ──────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: influencer-ai-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: oregon
+    plan: free
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false          # you'll set this in the Render dashboard
+      - key: APIFY_API_KEY
+        sync: false
+      - key: DATABASE_PATH
+        value: /data/influencer_ai.db
+    disk:
+      name: sqlite-data
+      mountPath: /data
+      sizeGB: 1              # free tier allows 1 GB
+    healthCheckPath: /health

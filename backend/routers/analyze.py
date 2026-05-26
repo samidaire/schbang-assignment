@@ -141,6 +141,33 @@ async def analyze_influencers(file: UploadFile = File(...)):
             f"Tier 2/3: {tier23_percentage:.1f}%"
         )
 
+        # Auto-save campaign snapshots to SQLite
+        try:
+            from services.db_service import save_campaign
+            avg_engagement = (
+                sum(inf.get("Engagement Rate (%)", 0.0) or 0.0 for inf in shortlisted) / len(shortlisted)
+                if shortlisted
+                else 0.0
+            )
+            avg_score = (
+                sum(inf.get("score", 0.0) or 0.0 for inf in shortlisted) / len(shortlisted)
+                if shortlisted
+                else 0.0
+            )
+            
+            save_campaign(
+                campaign_name=f"Campaign - {file.filename}",
+                total_shortlisted=len(shortlisted),
+                total_rejected=len(rejected),
+                budget_used=budget_used,
+                remaining_budget=remaining_budget,
+                tier23_percentage=tier23_percentage,
+                avg_engagement_rate=round(avg_engagement, 2),
+                avg_score=round(avg_score, 1)
+            )
+        except Exception as e:
+            logger.error(f"Failed to auto-save campaign snapshot to database: {e}")
+
         return response
 
     except HTTPException:
@@ -184,3 +211,84 @@ def _safe_float(val) -> float | None:
         return None if math.isnan(f) else f
     except (ValueError, TypeError):
         return None
+
+
+@router.get("/analyze/default")
+async def default_influencer_analysis():
+    """
+    Directly run the optimization and score analysis pipeline on the default
+    seeded spreadsheet database without requiring manual Excel upload.
+    """
+    import os
+    try:
+        # Search for database file
+        search_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assingment", "influencer_database.xlsx"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "assingment", "influencer_database.xlsx"),
+            r"c:\Users\samid\Downloads\influencer-ai-assignment\assingment\influencer_database.xlsx"
+        ]
+        
+        db_path = None
+        for path in search_paths:
+            if os.path.exists(path):
+                db_path = path
+                break
+                
+        if not db_path:
+            raise HTTPException(status_code=404, detail="Default influencer database spreadsheet not found")
+
+        with open(db_path, "rb") as f:
+            file_bytes = f.read()
+
+        logger.info(f"Processing default file: {db_path} ({len(file_bytes)} bytes)")
+
+        # --- Step 1: Parse ---
+        df = parse_excel(file_bytes)
+        logger.info(f"Parsed {len(df)} default influencer profiles")
+
+        # --- Step 2: Score ---
+        df = score_influencers(df)
+
+        # --- Step 3: Shortlist ---
+        shortlisted, rejected = build_shortlist(df)
+
+        # --- Step 4: AI Reviews ---
+        for i, inf in enumerate(shortlisted):
+            shortlisted[i]["ai_review"] = _fallback_review(inf)
+
+        for i, inf in enumerate(rejected):
+            rejected[i]["ai_review"] = _fallback_review(inf)
+
+        # --- Step 5: Build response ---
+        budget_used = sum(
+            inf.get("Rate (INR)", 0) for inf in shortlisted
+            if pd.notna(inf.get("Rate (INR)"))
+        )
+        remaining_budget = settings.BUDGET_LIMIT - budget_used
+
+        tier23_in_shortlist = sum(
+            1 for inf in shortlisted if inf.get("tier") == "Tier 2/3"
+        )
+        tier23_percentage = (
+            (tier23_in_shortlist / len(shortlisted) * 100)
+            if shortlisted
+            else 0.0
+        )
+
+        response = {
+            "shortlisted": [_format_influencer(inf, selected=True) for inf in shortlisted],
+            "rejected": [_format_influencer(inf, selected=False) for inf in rejected],
+            "total_shortlisted": len(shortlisted),
+            "total_rejected": len(rejected),
+            "budget_used": round(budget_used, 2),
+            "remaining_budget": round(remaining_budget, 2),
+            "tier23_percentage": round(tier23_percentage, 1),
+        }
+
+        logger.info("Default roster analysis compiled successfully")
+        return response
+
+    except Exception as e:
+        logger.exception(f"Default analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Default database optimization failed: {str(e)}")
+
