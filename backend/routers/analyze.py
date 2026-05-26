@@ -19,7 +19,7 @@ from services.ai_service import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["analyze"])
+router = APIRouter(prefix="/analyze", tags=["analyze"])
 
 
 class ReviewRequest(BaseModel):
@@ -58,7 +58,7 @@ async def get_live_brief(request: BriefRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/analyze")
+@router.post("")
 async def analyze_influencers(file: UploadFile = File(...)):
     """
     Upload an Excel file of influencer profiles and get a scored,
@@ -213,7 +213,7 @@ def _safe_float(val) -> float | None:
         return None
 
 
-@router.get("/analyze/default")
+@router.get("/default")
 async def default_influencer_analysis():
     """
     Directly run the optimization and score analysis pipeline on the default

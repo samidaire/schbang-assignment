@@ -2,7 +2,7 @@
 
 An AI-powered platform that takes a raw Excel spreadsheet of influencer profiles and produces a **scored, budget-fitted, constraint-satisfying shortlist** with human-readable reasoning for every selection and rejection.
 
-Built for the [Schbang](https://www.schbang.com/) hiring assignment: *AI + Influencer Marketing*.
+Built for the [Schbang](https://www.schbang.com/) hiring assignment: _AI + Influencer Marketing_.
 
 ---
 
@@ -107,50 +107,50 @@ Open `http://localhost:3000` — default roster auto-loads!
 
 ### Backend
 
-| Layer | Tech | Version | Why |
-|-------|------|---------|-----|
-| **Runtime** | Python | 3.14+ | Modern features, fast, uv for deterministic builds |
-| **Framework** | FastAPI | 0.136+ | Async-first, auto-docs, production-grade |
-| **Data** | Pandas | 3.0+ | Industry standard for Excel/DataFrames |
-| **Database** | SQLite | 3 | Zero-config, persistent, ideal for free tier |
-| **AI** | OpenRouter API | Latest | Multi-model access, free tier available |
-| **Scraping** | Apify SDK | Latest | Instagram/YouTube, serverless, free tier available |
-| **Server** | Uvicorn | 0.48+ | ASGI, production-ready |
-| **Container** | Docker | Latest | Multi-stage build, free tier on Render |
+| Layer         | Tech           | Version | Why                                                |
+| ------------- | -------------- | ------- | -------------------------------------------------- |
+| **Runtime**   | Python         | 3.14+   | Modern features, fast, uv for deterministic builds |
+| **Framework** | FastAPI        | 0.136+  | Async-first, auto-docs, production-grade           |
+| **Data**      | Pandas         | 3.0+    | Industry standard for Excel/DataFrames             |
+| **Database**  | SQLite         | 3       | Zero-config, persistent, ideal for free tier       |
+| **AI**        | OpenRouter API | Latest  | Multi-model access, free tier available            |
+| **Scraping**  | Apify SDK      | Latest  | Instagram/YouTube, serverless, free tier available |
+| **Server**    | Uvicorn        | 0.48+   | ASGI, production-ready                             |
+| **Container** | Docker         | Latest  | Multi-stage build, free tier on Render             |
 
 ### Frontend
 
-| Layer | Tech | Version | Why |
-|-------|------|---------|-----|
-| **Framework** | Next.js | 16 | React 19 + RSC, optimized for Vercel |
-| **Language** | TypeScript | 5+ | Type safety, better DX |
-| **Styling** | Tailwind CSS | 4 | Utility-first, Google-colored theme |
-| **Components** | shadcn/ui | Latest | Accessible, composable, customizable |
-| **Icons** | Lucide React | 1.16+ | Lightweight, clean SVGs |
-| **Deployment** | Vercel | - | Optimal Next.js experience, auto-scaling |
+| Layer          | Tech         | Version | Why                                      |
+| -------------- | ------------ | ------- | ---------------------------------------- |
+| **Framework**  | Next.js      | 16      | React 19 + RSC, optimized for Vercel     |
+| **Language**   | TypeScript   | 5+      | Type safety, better DX                   |
+| **Styling**    | Tailwind CSS | 4       | Utility-first, Google-colored theme      |
+| **Components** | shadcn/ui    | Latest  | Accessible, composable, customizable     |
+| **Icons**      | Lucide React | 1.16+   | Lightweight, clean SVGs                  |
+| **Deployment** | Vercel       | -       | Optimal Next.js experience, auto-scaling |
 
 ### Infrastructure
 
-| Component | Service | Tier | Cost |
-|-----------|---------|------|------|
-| **Backend** | Render (Docker) | Free | $0 |
-| **Frontend** | Vercel | Free | $0 |
-| **Database** | SQLite on Render disk | 1GB | Included |
-| **AI Models** | OpenRouter | Free tier | $0 (with key) or fallback |
-| **Scraping** | Apify | Free tier | $0 (with key) or simulated |
+| Component     | Service               | Tier      | Cost                       |
+| ------------- | --------------------- | --------- | -------------------------- |
+| **Backend**   | Render (Docker)       | Free      | $0                         |
+| **Frontend**  | Vercel                | Free      | $0                         |
+| **Database**  | SQLite on Render disk | 1GB       | Included                   |
+| **AI Models** | OpenRouter            | Free tier | $0 (with key) or fallback  |
+| **Scraping**  | Apify                 | Free tier | $0 (with key) or simulated |
 
 ---
 
 ## 🔑 Environment Variables
 
-| Variable | Required | Purpose |
-|:---------|:--------:|:--------|
-| `OPENROUTER_API_KEY` | No* | AI-generated strategic reviews and creative briefs (free tier available) |
-| `APIFY_API_KEY` | No* | Live Instagram/YouTube scraping for competitor audits (free tier available) |
-| `CORS_ORIGINS` | No | Comma-separated list of allowed frontend origins (production security) |
-| `DATABASE_PATH` | No | SQLite database path (auto-set to `/data/influencer_ai.db` on Render) |
+| Variable             | Required | Purpose                                                                     |
+| :------------------- | :------: | :-------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY` |   No\*   | AI-generated strategic reviews and creative briefs (free tier available)    |
+| `APIFY_API_KEY`      |   No\*   | Live Instagram/YouTube scraping for competitor audits (free tier available) |
+| `CORS_ORIGINS`       |    No    | Comma-separated list of allowed frontend origins (production security)      |
+| `DATABASE_PATH`      |    No    | SQLite database path (auto-set to `/data/influencer_ai.db` on Render)       |
 
-*The tool works fully without any API keys — all features gracefully degrade to local fallbacks.
+\*The tool works fully without any API keys — all features gracefully degrade to local fallbacks.
 
 ---
 
@@ -172,18 +172,18 @@ Open `http://localhost:3000` — default roster auto-loads!
 
 ### At Development Time
 
-| Tool | Role |
-|------|------|
+| Tool                             | Role                                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
 | **Gemini (via Antigravity IDE)** | Pair-programming partner for architecture, code generation, debugging, and full-stack iteration |
-| **Claude** (this one!) | System design, testing, deployment readiness, documentation |
+| **Claude** (this one!)           | System design, testing, deployment readiness, documentation                                     |
 
 ### At Runtime
 
-| Tool | Purpose | How It Works |
-|------|---------|--------------|
+| Tool               | Purpose             | How It Works                                                                                 |
+| ------------------ | ------------------- | -------------------------------------------------------------------------------------------- |
 | **OpenRouter API** | AI reviews & briefs | Calls `z-ai/glm-4.5-air` or `arcee-ai/trinity-large-thinking` to generate insights on-demand |
-| **Apify SDK** | Competitor audits | Scrapes Instagram/YouTube posts to verify influencer exclusivity |
-| **SQLite** | Campaign history | Stores campaign snapshots, enables trending and analytics |
+| **Apify SDK**      | Competitor audits   | Scrapes Instagram/YouTube posts to verify influencer exclusivity                             |
+| **SQLite**         | Campaign history    | Stores campaign snapshots, enables trending and analytics                                    |
 
 **Graceful Fallback**: All AI features have intelligent rule-based fallbacks that work instantly without API keys.
 
@@ -230,7 +230,7 @@ Open `http://localhost:3000` — default roster auto-loads!
 ✅ **Frontend**: Live on Vercel  
 ✅ **CORS**: Configured for production  
 ✅ **Database**: Persistent and seeded  
-✅ **Monitoring**: Health checks enabled  
+✅ **Monitoring**: Health checks enabled
 
 **See [DEPLOYMENT_QUICK_START.md](DEPLOYMENT_QUICK_START.md) for 5-minute setup.**
 
@@ -238,12 +238,12 @@ Open `http://localhost:3000` — default roster auto-loads!
 
 ## 📋 Assignment Parts Covered
 
-| Part | Deliverable | Location |
-|:-----|:------------|:---------|
-| **Part 1** | Shortlist from the data | Automated — upload the spreadsheet, get scored shortlist with reasons |
-| **Part 2** | Campaign workflow + AI opportunities | [`part2_workflow_and_ai.md`](part2_workflow_and_ai.md) |
-| **Part 3** | Build a working tool | This entire repo — FastAPI backend + Next.js frontend, production-deployed |
-| **Part 4** | Sell it internally | [`part4_internal_pitch.md`](part4_internal_pitch.md) |
+| Part       | Deliverable                          | Location                                                                   |
+| :--------- | :----------------------------------- | :------------------------------------------------------------------------- |
+| **Part 1** | Shortlist from the data              | Automated — upload the spreadsheet, get scored shortlist with reasons      |
+| **Part 2** | Campaign workflow + AI opportunities | [`part2_workflow_and_ai.md`](part2_workflow_and_ai.md)                     |
+| **Part 3** | Build a working tool                 | This entire repo — FastAPI backend + Next.js frontend, production-deployed |
+| **Part 4** | Sell it internally                   | [`part4_internal_pitch.md`](part4_internal_pitch.md)                       |
 
 ---
 
@@ -261,17 +261,20 @@ Open `http://localhost:3000` — default roster auto-loads!
 ## 🎓 Key Insights
 
 ### Algorithmic Innovation
+
 - **Greedy Knapsack + Constraints**: Maximizes campaign value (score) while respecting budget and business rules
 - **Composite Scoring**: Balanced weights ensure no single metric dominates
 - **Graceful Degradation**: AI features work with or without external APIs
 
 ### System Design
+
 - **Monorepo**: Unified versioning, shared documentation
 - **Async-First**: FastAPI's async handlers for high throughput
 - **Type Safety**: TypeScript + Pydantic for runtime validation
 - **Production-Ready**: Docker, CORS, error handling, logging from day one
 
 ### User Experience
+
 - **Auto-Loading**: Default roster loads instantly (no manual upload)
 - **Explainability**: Every decision has human-readable reasoning
 - **Progressive Enhancement**: Advanced features (AI reviews, briefs) optional, core works offline
@@ -280,14 +283,14 @@ Open `http://localhost:3000` — default roster auto-loads!
 
 ## 📊 Performance
 
-| Metric | Value |
-|--------|-------|
-| **First Page Load** | ~1-2 seconds (static) |
-| **Default Roster Load** | ~500ms (API + network) |
-| **Excel Upload Processing** | ~2-5 seconds (parsing + scoring + shortlisting) |
-| **AI Review Generation** | ~3-5 seconds (OpenRouter) or instant (fallback) |
-| **Database Query** | <100ms (SQLite) |
-| **Cold Start (Render free tier)** | ~30 seconds (acceptable for free tier) |
+| Metric                            | Value                                           |
+| --------------------------------- | ----------------------------------------------- |
+| **First Page Load**               | ~1-2 seconds (static)                           |
+| **Default Roster Load**           | ~500ms (API + network)                          |
+| **Excel Upload Processing**       | ~2-5 seconds (parsing + scoring + shortlisting) |
+| **AI Review Generation**          | ~3-5 seconds (OpenRouter) or instant (fallback) |
+| **Database Query**                | <100ms (SQLite)                                 |
+| **Cold Start (Render free tier)** | ~30 seconds (acceptable for free tier)          |
 
 ---
 
@@ -316,4 +319,3 @@ Built for the Schbang hiring assignment. Not licensed for production use without
 ## 📞 Questions?
 
 See [SOLUTION_ARCHITECTURE.md](SOLUTION_ARCHITECTURE.md) for the comprehensive technical guide.
-
