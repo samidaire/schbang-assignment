@@ -827,29 +827,23 @@ export default function Home() {
   return (
     <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="min-h-screen bg-[#F8F9FA] text-[#202124] flex flex-col selection:bg-[#4285F4]/10 selection:text-[#4285F4] relative overflow-hidden">
       {/* Ambient Google-colored background blur blobs */}
-      <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[#4285F4]/[0.035] rounded-full blur-[120px] pointer-events-none translate-x-1/4 -translate-y-1/4" />
-      <div className="absolute top-[20%] left-0 w-[400px] h-[400px] bg-[#EA4335]/[0.03] rounded-full blur-[120px] pointer-events-none -translate-x-1/4" />
-      <div className="absolute top-[50%] right-0 w-[450px] h-[450px] bg-[#FBBC05]/[0.025] rounded-full blur-[130px] pointer-events-none translate-x-1/3" />
-      <div className="absolute bottom-0 left-[10%] w-[500px] h-[500px] bg-[#34A853]/[0.025] rounded-full blur-[140px] pointer-events-none -translate-y-1/10" />
+      <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[#4285F4]/[0.035] rounded-full blur-[120px] pointer-events-none translate-x-1/4 -translate-y-1/4 animate-blob-1" />
+      <div className="absolute top-[20%] left-0 w-[400px] h-[400px] bg-[#EA4335]/[0.03] rounded-full blur-[120px] pointer-events-none -translate-x-1/4 animate-blob-2" />
+      <div className="absolute top-[50%] right-0 w-[450px] h-[450px] bg-[#FBBC05]/[0.025] rounded-full blur-[130px] pointer-events-none translate-x-1/3 animate-blob-3" />
+      <div className="absolute bottom-0 left-[10%] w-[500px] h-[500px] bg-[#34A853]/[0.025] rounded-full blur-[140px] pointer-events-none -translate-y-1/10 animate-blob-4" />
 
       {/* HEADER NAVBAR */}
-      <header className="bg-white border-b border-border py-3 px-6 md:px-12 flex justify-between items-center sticky top-0 z-50 shadow-sm/5">
+      <header className="bg-white/85 backdrop-blur-md border-b border-border py-3 px-6 md:px-12 flex justify-between items-center sticky top-0 z-50 shadow-sm/5">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-gradient-to-tr from-[#4285F4] via-[#EA4335] to-[#FBBC05] rounded-lg flex items-center justify-center shadow-sm">
+          <div className="h-8 w-8 bg-gradient-to-tr from-[#4285F4] via-[#EA4335] to-[#FBBC05] rounded-lg flex items-center justify-center shadow-md animate-float">
             <Sparkles className="h-4 w-4 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-black tracking-tight flex items-center">
-              <span className="text-[#4285F4]">S</span>
-              <span className="text-[#EA4335]">c</span>
-              <span className="text-[#FBBC05]">h</span>
-              <span className="text-[#4285F4]">b</span>
-              <span className="text-[#34A853]">a</span>
-              <span className="text-[#EA4335]">n</span>
-              <span className="text-[#4285F4]">g</span>
-              <span className="text-[#34A853] ml-0.5 font-bold">AI</span>
+              <span className="bg-gradient-to-r from-[#4285F4] via-[#EA4335] to-[#FBBC05] bg-clip-text text-transparent">Schbang</span>
+              <span className="bg-gradient-to-r from-[#34A853] to-[#4285F4] bg-clip-text text-transparent ml-0.5 font-extrabold">AI</span>
             </h1>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
+            <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold">
               Influencer Transformation Co-Pilot
             </p>
           </div>
@@ -1142,7 +1136,7 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredInfluencers.map((influencer: Influencer, index: number) => {
                         return (
-                          <Card key={index} className="bg-white border border-border hover:border-[#4285F4]/60 p-5 rounded-2xl flex flex-col justify-between shadow-sm hover:shadow-md/5 transition duration-200 relative group">
+                          <Card key={index} className="glass-card p-5 rounded-2xl flex flex-col justify-between relative group">
                             
                             {/* Platforms Badge overlay */}
                             <div className="absolute top-4 right-4">
@@ -1316,8 +1310,8 @@ export default function Home() {
                         return (
                           <Card 
                             key={index} 
-                            className={`bg-white border border-border p-4 rounded-xl flex flex-col justify-between border-l-2 transition duration-200 ${
-                              isCompetitor ? 'border-l-[#EA4335] bg-[#EA4335]/[0.01]' : 'border-l-muted-foreground/30'
+                            className={`glass-card p-4 rounded-xl flex flex-col justify-between border-l-4 transition duration-200 ${
+                              isCompetitor ? 'border-l-[#EA4335]' : 'border-l-muted-foreground/30'
                             }`}
                           >
                             <div>
