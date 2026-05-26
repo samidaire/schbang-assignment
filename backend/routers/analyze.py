@@ -226,12 +226,12 @@ async def default_influencer_analysis():
         project_root = os.path.dirname(backend_dir)
         
         search_paths = [
-            # Relative to backend directory
+            # In backend directory (will be included in Docker build)
+            os.path.join(backend_dir, "influencer_database.xlsx"),
+            # Fallback to assingment directory (for local development)
             os.path.join(backend_dir, "assingment", "influencer_database.xlsx"),
             # Relative to project root
             os.path.join(project_root, "assingment", "influencer_database.xlsx"),
-            # Absolute path (user's system)
-            r"c:\Users\samid\Downloads\influencer-ai-assignment\assingment\influencer_database.xlsx"
         ]
         
         db_path = None
